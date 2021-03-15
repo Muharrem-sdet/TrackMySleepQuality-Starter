@@ -22,8 +22,11 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import com.example.android.trackmysleepquality.R
+import com.example.android.trackmysleepquality.database.SleepDatabase
 import com.example.android.trackmysleepquality.databinding.FragmentSleepTrackerBinding
+import kotlinx.android.synthetic.main.fragment_sleep_tracker.*
 
 /**
  * A fragment with buttons to record start and end times for sleep, which are saved in
@@ -32,18 +35,28 @@ import com.example.android.trackmysleepquality.databinding.FragmentSleepTrackerB
  */
 class SleepTrackerFragment : Fragment() {
 
-    /**
-     * Called when the Fragment is ready to display content to the screen.
-     *
-     * This function uses DataBindingUtil to inflate R.layout.fragment_sleep_quality.
-     */
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View? {
+    private lateinit var sleepTrackerViewModel: SleepTrackerViewModel
 
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
+                              savedInstanceState: Bundle?): View {
         // Get a reference to the binding object and inflate the fragment views.
         val binding: FragmentSleepTrackerBinding = DataBindingUtil.inflate(
                 inflater, R.layout.fragment_sleep_tracker, container, false)
-
+        val application = requireNotNull(this.activity).application
+        val dataSource = SleepDatabase.getInstance(application).sleepDatabaseDao
+        val viewModelFactory = SleepTrackerViewModelFactory(dataSource, application)
+        sleepTrackerViewModel =
+                ViewModelProvider(
+                        this, viewModelFactory).get(SleepTrackerViewModel::class.java)
+        binding.sleepTrackerViewModel = sleepTrackerViewModel
+        binding.lifecycleOwner = this
         return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        start_button.setOnClickListener() { sleepTrackerViewModel.onStartTracking() }
+        stop_button.setOnClickListener() { sleepTrackerViewModel.onStopTracking() }
+        clear_button.setOnClickListener() { sleepTrackerViewModel.onClear() }
     }
 }
